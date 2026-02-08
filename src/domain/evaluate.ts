@@ -30,6 +30,9 @@ export type BindingInfo = {
 }
 
 export type Evaluation = {
+  lot: Lot
+  ruleset: Ruleset
+  preset: PresetForm
   envelope: Envelope
   placement: { footprint: Rect }
   metrics: BuildingMetrics
@@ -155,7 +158,7 @@ export function evaluateScenario(args: {
 
   const binding = computeBinding({ envelope, placementFootprint: fp, metrics, ruleset, violations })
 
-  return { envelope, placement, metrics, parkingLayout, violations, binding }
+  return { lot, ruleset, preset, envelope, placement, metrics, parkingLayout, violations, binding }
 }
 
 function computeBinding(args: {
@@ -214,4 +217,3 @@ function computeBinding(args: {
   const best = candidates[0]
   return { kind: 'binding', label: best ? best.label : 'No binding constraint.' }
 }
-

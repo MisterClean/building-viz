@@ -1,9 +1,25 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { evaluateScenario } from './domain/evaluate'
 import { LOT_PRESETS, PRESET_FORMS, RULESETS, getPresetForm, getRuleset } from './domain/presets'
 import { encodeState, writeStateToUrl, type PersistedStateV1 } from './app/persist'
 import { useAppStore } from './app/store'
 import type { Lot } from './domain/types'
+const LazyViewport3D = lazy(() =>
+  import('./view/Viewport3D').then((m) => ({ default: m.Viewport3D })),
+)
+
+function ViewportFallback(props: { label: string }) {
+  return (
+    <div className="absolute inset-0 grid place-items-center p-6 text-center">
+      <div>
+        <div className="text-sm font-semibold">{props.label}</div>
+        <div className="mt-1 text-xs text-black/60">
+          WebGL unavailable (expected in tests). Open in a browser with WebGL enabled for the 3D view.
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function clampNumber(n: number, opts: { min?: number; max?: number }): number {
   const min = opts.min ?? -Infinity
@@ -508,17 +524,58 @@ function App() {
           data-testid="viewport"
           className="relative overflow-hidden rounded-xl border border-black/10 bg-white/40 backdrop-blur"
         >
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="max-w-md px-6 text-center">
-              <div className="text-sm font-semibold">3D Viewport</div>
-              <div className="mt-1 text-xs text-black/60">
-                State + stats + shareable URL are now wired. Next commit: R3F scene with lot, envelope, building, context, and parking geometry.
+          {typeof WebGLRenderingContext === 'undefined' ? (
+            <ViewportFallback label="3D Viewport" />
+          ) : mode === 'compare' ? (
+            <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2">
+              <div className="relative border-b border-black/10 md:border-b-0 md:border-r">
+                <div className="absolute left-3 top-3 z-10 rounded-md border border-black/10 bg-white/70 px-2 py-1 text-[11px] font-semibold">
+                  A: {rulesetA.versionLabel}
+                </div>
+                <Suspense fallback={<ViewportFallback label={`A: ${rulesetA.versionLabel}`} />}>
+                  <LazyViewport3D
+                    label={`A: ${rulesetA.versionLabel}`}
+                    cameraPreset={cameraPreset}
+                    ui={ui}
+                    evaluation={evalA}
+                    controlsEnabled={false}
+                  />
+                </Suspense>
               </div>
-              <div className="mt-3 text-[11px] text-black/50">
-                URL payload size: {encodeState(persisted).length} chars
+              <div className="relative">
+                <div className="absolute left-3 top-3 z-10 rounded-md border border-black/10 bg-white/70 px-2 py-1 text-[11px] font-semibold">
+                  B: {rulesetB.versionLabel}
+                </div>
+                <Suspense fallback={<ViewportFallback label={`B: ${rulesetB.versionLabel}`} />}>
+                  <LazyViewport3D
+                    label={`B: ${rulesetB.versionLabel}`}
+                    cameraPreset={cameraPreset}
+                    ui={ui}
+                    evaluation={evalB}
+                    controlsEnabled={false}
+                  />
+                </Suspense>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="absolute inset-0">
+              <div className="absolute left-3 top-3 z-10 rounded-md border border-black/10 bg-white/70 px-2 py-1 text-[11px] font-semibold">
+                {rulesetA.versionLabel}
+              </div>
+              <Suspense fallback={<ViewportFallback label={rulesetA.versionLabel} />}>
+                <LazyViewport3D
+                  label={rulesetA.versionLabel}
+                  cameraPreset={cameraPreset}
+                  ui={ui}
+                  evaluation={evalA}
+                  controlsEnabled
+                />
+              </Suspense>
+              <div className="absolute bottom-2 right-3 z-10 rounded-md border border-black/10 bg-white/60 px-2 py-1 text-[11px] text-black/60">
+                URL payload: {encodeState(persisted).length} chars
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
