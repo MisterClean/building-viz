@@ -1,5 +1,17 @@
 import type { Lot, PresetForm, Ruleset } from './types'
 
+export function getLotPreset(id: string): { id: string; name: string; lot: Lot } | undefined {
+  return LOT_PRESETS.find((p) => p.id === id)
+}
+
+export function getRuleset(id: string): Ruleset | undefined {
+  return RULESETS.find((r) => r.id === id)
+}
+
+export function getPresetForm(id: string): PresetForm | undefined {
+  return PRESET_FORMS.find((p) => p.id === id)
+}
+
 export const LOT_PRESETS: Array<{ id: string; name: string; lot: Lot }> = [
   {
     id: 'lot_50x150',
@@ -137,4 +149,3 @@ export const PRESET_FORMS: PresetForm[] = [
     footprintDepthFt: 50,
   },
 ]
-

@@ -16,7 +16,6 @@ export function placePresetInEnvelope(args: {
   const w = preset.footprintWidthFt
   const d = preset.footprintDepthFt
 
-  const envW = envelope.x1 - envelope.x0
   const envD = envelope.z1 - envelope.z0
 
   const xCenter = (envelope.x0 + envelope.x1) / 2
@@ -30,4 +29,3 @@ export function placePresetInEnvelope(args: {
 
   return { footprint: { x0, x1, z0, z1 } }
 }
-
