@@ -1,5 +1,9 @@
 # Building-Viz: Multifamily Lot Visualizer (MVP-First Spec)
 
+## Source Docs
+- Original input spec: `docs/source/spec-original.md`
+- Feedback memo: `docs/source/feedback01.md` (original DOCX preserved as `docs/source/feedback01.docx`)
+
 ## Summary
 Build a browser-based 3D visualizer that helps non-technical users understand what kinds of small multifamily housing can fit on a residential lot under zoning constraints. The core output is *persuasive, trustworthy scenarios* (with context + comparison), not a free-form “apartment Tetris” builder.
 
@@ -294,4 +298,3 @@ Minimum automated tests for MVP:
 
 ## Data/Licensing Note (Future)
 Before shipping parcel/GIS integration, document data sources and redistribution rights. Prefer open data sources or live queries where licensing restricts republishing.
-
