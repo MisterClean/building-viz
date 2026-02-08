@@ -13,3 +13,13 @@ body {
   background: radial-gradient(1200px 800px at 20% 10%, #fff7e8 0%, #f7f2e8 45%, #efe7d7 100%);
   color: #0b1220;
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

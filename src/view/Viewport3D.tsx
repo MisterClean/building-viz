@@ -1,5 +1,5 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import * as THREE from 'three'
 import type { CameraPreset, UiConfig } from '../app/persist'
@@ -30,6 +30,9 @@ type Viewport3DProps = {
 export const Viewport3D = memo(function Viewport3D(props: Viewport3DProps) {
   const hasWebGL = useMemo(() => canUseWebGL(), [])
   const controlsRef = useRef<OrbitControlsHandle | null>(null)
+  const onControls = useCallback((controls: OrbitControlsHandle | null) => {
+    controlsRef.current = controls
+  }, [])
 
   if (!hasWebGL) {
     return (
@@ -57,7 +60,7 @@ export const Viewport3D = memo(function Viewport3D(props: Viewport3DProps) {
 
       <CameraRig preset={props.cameraPreset} evaluation={props.evaluation} controlsRef={controlsRef} />
       <OrbitControls
-        controlsRef={controlsRef}
+        onControls={onControls}
         enabled={props.controlsEnabled}
         enableDamping
         dampingFactor={0.08}
@@ -75,29 +78,30 @@ function CameraRig(props: {
   controlsRef: MutableRefObject<OrbitControlsHandle | null>
 }) {
   const { camera } = useThree()
+  const { evaluation, preset, controlsRef } = props
 
   useEffect(() => {
-    const lot = props.evaluation.lot
+    const lot = evaluation.lot
     const lotCenter = new THREE.Vector3(lot.widthFt / 2, 0, lot.depthFt / 2)
 
-    const b = props.evaluation.placement.footprint
+    const b = evaluation.placement.footprint
     const buildingCenter = rectCenter(b)
     const buildingTarget = new THREE.Vector3(
       buildingCenter.x,
-      props.evaluation.metrics.heightFt * 0.35,
+      evaluation.metrics.heightFt * 0.35,
       buildingCenter.z,
     )
 
     // Use lot size heuristics for camera distance.
     const d = Math.max(80, lot.depthFt * 0.8)
 
-    if (props.preset === 'street') {
+    if (preset === 'street') {
       camera.position.set(lotCenter.x, 8, -d * 0.65)
       camera.lookAt(buildingTarget)
-    } else if (props.preset === 'front') {
+    } else if (preset === 'front') {
       camera.position.set(
         lotCenter.x,
-        Math.max(18, props.evaluation.metrics.heightFt * 0.65),
+        Math.max(18, evaluation.metrics.heightFt * 0.65),
         -d * 0.55,
       )
       camera.lookAt(buildingTarget)
@@ -106,12 +110,12 @@ function CameraRig(props: {
       camera.lookAt(lotCenter)
     }
 
-    const controls = props.controlsRef.current
+    const controls = controlsRef.current
     if (controls) {
       controls.target.set(lotCenter.x, buildingTarget.y, lotCenter.z)
       controls.update()
     }
-  }, [camera, props.evaluation, props.preset])
+  }, [camera, controlsRef, evaluation, preset])
 
   return null
 }

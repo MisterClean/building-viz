@@ -39,6 +39,23 @@ function lotPresetValue(lot: Lot): string {
   return preset?.id ?? 'custom'
 }
 
+function safeFilename(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function downloadDataUrl(filename: string, dataUrl: string) {
+  const a = document.createElement('a')
+  a.href = dataUrl
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
 function App() {
   const {
     v,
@@ -57,7 +74,10 @@ function App() {
     setParking,
   } = useAppStore()
 
-  const persisted: PersistedStateV1 = { v, mode, cameraPreset, ui, scenarioA, scenarioB }
+  const persisted = useMemo(
+    (): PersistedStateV1 => ({ v, mode, cameraPreset, ui, scenarioA, scenarioB }),
+    [v, mode, cameraPreset, ui, scenarioA, scenarioB],
+  )
   const [copied, setCopied] = useState(false)
 
   // Keep URL in sync for shareability.
@@ -112,6 +132,45 @@ function App() {
     }
   }
 
+  function onPrintSheet() {
+    const url = new URL(window.location.href)
+    url.searchParams.set('print', '1')
+    url.searchParams.set('s', encodeState(persisted))
+    window.location.href = url.toString()
+  }
+
+  function onScreenshot() {
+    const viewport = document.querySelector('[data-testid=viewport]')
+    const canvases = viewport ? Array.from(viewport.querySelectorAll('canvas')) : []
+    if (canvases.length === 0) {
+      window.alert('No 3D canvas found to capture.')
+      return
+    }
+
+    if (mode === 'single') {
+      const canvas = canvases[0] as HTMLCanvasElement
+      downloadDataUrl(
+        `${safeFilename(`${rulesetA.versionLabel}-${presetA.id}`) || 'scenario'}.png`,
+        canvas.toDataURL('image/png'),
+      )
+      return
+    }
+
+    const [a, b] = canvases as HTMLCanvasElement[]
+    if (a) {
+      downloadDataUrl(
+        `${safeFilename(`A-${rulesetA.versionLabel}-${presetA.id}`) || 'scenario-a'}.png`,
+        a.toDataURL('image/png'),
+      )
+    }
+    if (b) {
+      downloadDataUrl(
+        `${safeFilename(`B-${rulesetB.versionLabel}-${presetB.id}`) || 'scenario-b'}.png`,
+        b.toDataURL('image/png'),
+      )
+    }
+  }
+
   return (
     <div className="h-full">
       <header className="border-b border-black/10 bg-white/50 backdrop-blur">
@@ -131,6 +190,20 @@ function App() {
                 <option value="compare">Compare</option>
               </select>
             </label>
+            <button
+              type="button"
+              className="rounded-md border border-black/10 bg-white/70 px-2 py-1 text-xs hover:bg-white"
+              onClick={onScreenshot}
+            >
+              Screenshot
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-black/10 bg-white/70 px-2 py-1 text-xs hover:bg-white"
+              onClick={onPrintSheet}
+            >
+              Print sheet
+            </button>
             <button
               type="button"
               className="rounded-md border border-black/10 bg-white/70 px-2 py-1 text-xs hover:bg-white"

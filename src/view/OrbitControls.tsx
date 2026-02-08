@@ -1,6 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
-import type { MutableRefObject } from 'react'
+import { useEffect, useRef } from 'react'
 import { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export type OrbitControlsHandle = OrbitControlsImpl
@@ -12,44 +11,59 @@ type Props = {
   maxPolarAngle?: number
   minDistance?: number
   maxDistance?: number
-  controlsRef?: MutableRefObject<OrbitControlsHandle | null>
+  onControls?: (controls: OrbitControlsHandle | null) => void
 }
 
 export function OrbitControls(props: Props) {
   const { camera, gl } = useThree()
+  const {
+    enabled,
+    enableDamping,
+    dampingFactor,
+    maxPolarAngle,
+    minDistance,
+    maxDistance,
+    onControls,
+  } = props
+  const domElement = gl.domElement
 
-  const controls = useMemo(() => new OrbitControlsImpl(camera, gl.domElement), [camera, gl.domElement])
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
   useEffect(() => {
-    controls.enabled = props.enabled
-    controls.enableDamping = props.enableDamping ?? false
-    controls.dampingFactor = props.dampingFactor ?? 0.1
-    if (props.maxPolarAngle != null) controls.maxPolarAngle = props.maxPolarAngle
-    if (props.minDistance != null) controls.minDistance = props.minDistance
-    if (props.maxDistance != null) controls.maxDistance = props.maxDistance
-
-    if (props.controlsRef) props.controlsRef.current = controls
+    const controls = new OrbitControlsImpl(camera, domElement)
+    controlsRef.current = controls
+    onControls?.(controls)
 
     return () => {
-      if (props.controlsRef && props.controlsRef.current === controls) props.controlsRef.current = null
       controls.dispose()
+      controlsRef.current = null
+      onControls?.(null)
     }
+  }, [camera, domElement, onControls])
+
+  useEffect(() => {
+    const controls = controlsRef.current
+    if (!controls) return
+
+    controls.enabled = enabled
+    controls.enableDamping = enableDamping ?? false
+    controls.dampingFactor = dampingFactor ?? 0.1
+    if (maxPolarAngle != null) controls.maxPolarAngle = maxPolarAngle
+    if (minDistance != null) controls.minDistance = minDistance
+    if (maxDistance != null) controls.maxDistance = maxDistance
   }, [
-    controls,
-    props.controlsRef,
-    props.dampingFactor,
-    props.enableDamping,
-    props.enabled,
-    props.maxDistance,
-    props.maxPolarAngle,
-    props.minDistance,
+    dampingFactor,
+    enableDamping,
+    enabled,
+    maxDistance,
+    maxPolarAngle,
+    minDistance,
   ])
 
   useFrame(() => {
-    if (!props.enabled) return
-    controls.update()
+    if (!enabled) return
+    controlsRef.current?.update()
   })
 
   return null
 }
-
